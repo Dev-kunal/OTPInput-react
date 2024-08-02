@@ -1,17 +1,14 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 
-export function OTPInput({ length, onChangeCode, code }) {
-  const [OTP, setOTP] = useState([
-    {
-      1: "",
-      2: "",
-      3: "",
-      4: "",
-    },
-  ]);
+export function OTPInput({ codeLength, onChangeCode }) {
+  const [OTP, setOTP] = useState(Array.from({ length: codeLength }, () => ""));
 
-  function verifyCode() {
-    console.log({ OTP: Object.values(OTP).join("") });
+  function updateOTPValue(value, index) {
+    setOTP((oldVal) => {
+      const updatedState = [...oldVal];
+      updatedState[index] = value;
+      return updatedState;
+    });
   }
 
   function handleInputChange(event) {
@@ -19,32 +16,37 @@ export function OTPInput({ length, onChangeCode, code }) {
     const { value, id } = element;
     // backspace/for empty value
     if (!value) return;
-    setOTP((val) => ({ ...val, [id]: value }));
-    element.nextSibling?.focus();
+    updateOTPValue(value, id);
+    if (element.nextSibling) element?.nextSibling?.focus();
   }
 
   function handleBackSpace(event) {
     const element = event.target;
-    setOTP((val) => ({ ...val, [element.id]: "" }));
-    element.previousSibling?.focus();
+    const { id } = element;
+    updateOTPValue("", id);
+    if (element.previousSibling) element?.previousSibling?.focus();
   }
+
+  function onPastCode(e) {
+    const copiedCode = e.clipboardData.getData("Text").split("");
+    setOTP(copiedCode);
+  }
+
+  useEffect(() => onChangeCode(OTP.join("")), [OTP]);
 
   return (
     <>
       <div className="flex gap-2 my-4">
-        {[1, 2, 3, 4].map((num, index) => (
+        {OTP.map((val, index) => (
           <input
             key={index}
             className="border border-gray-300 p-2 rounded-lg size-14 text-center text-lg"
             type="text"
-            id={num}
+            id={index}
             maxLength={1}
             minLength={1}
-            onPaste={(e) => {
-              const copiedCode = e.clipboardData.getData("Text").split("");
-              console.log({ copiedCode });
-            }}
-            value={OTP[num]}
+            onPaste={(e) => onPastCode(e)}
+            value={OTP[index]}
             onFocus={(e) => e.target.select()}
             onClick={(e) => e.target.select()}
             onChange={(e) => handleInputChange(e)}
@@ -54,13 +56,6 @@ export function OTPInput({ length, onChangeCode, code }) {
           />
         ))}
       </div>
-
-      <button
-        onClick={() => verifyCode()}
-        className="text-white bg-[#050708] uppercase font-bold rounded-md text-xs px-5 py-3 tracking-widest"
-      >
-        verify
-      </button>
     </>
   );
 }
